@@ -9,7 +9,7 @@ import Card from '@/components/ui/Card';
 import SearchBar from '@/components/ui/SearchBar';
 import { categories, offers } from '@/data/mockData';
 import { database } from '@/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, push } from 'firebase/database';
 import { Product } from '@/types';
 
 export default function HomePage() {
@@ -249,7 +249,6 @@ export default function HomePage() {
                     reset: () => void;
                   };
                   try {
-                    const { push } = await import('firebase/database');
                     await push(ref(database, 'stockRequests'), {
                       productName: target.productName.value,
                       quantity: target.qty.value || 1,
