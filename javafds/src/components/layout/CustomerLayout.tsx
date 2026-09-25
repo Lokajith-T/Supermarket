@@ -14,7 +14,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
   
   const tabs = [
     ...baseTabs,
-    { label: isAuthenticated ? 'Profile' : 'Login', to: isAuthenticated ? '/dashboard' : '/login', icon: User }
+    { label: isAuthenticated ? 'Profile' : 'Login', to: isAuthenticated ? '/customer' : '/login', icon: User }
   ];
 
   return (
