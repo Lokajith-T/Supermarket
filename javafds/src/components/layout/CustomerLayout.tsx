@@ -3,13 +3,19 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { Bell, House, ShoppingBag, ShoppingCart, Star, User } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 
-const tabs = [
+const baseTabs = [
   { label: 'Home', to: '/', icon: House },
   { label: 'Products', to: '/products', icon: ShoppingBag },
 ];
 
 export default function CustomerLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
+  const isAuthenticated = typeof window !== 'undefined' && localStorage.getItem('isAuthenticated') === 'true';
+  
+  const tabs = [
+    ...baseTabs,
+    { label: isAuthenticated ? 'Profile' : 'Login', to: isAuthenticated ? '/dashboard' : '/login', icon: User }
+  ];
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
@@ -17,7 +23,7 @@ export default function CustomerLayout({ children }: { children: ReactNode }) {
       <main>{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/90 px-2 py-2 backdrop-blur-xl md:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-2">
+        <div className="mx-auto grid max-w-md gap-2" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map(({ label, to, icon: Icon }) => {
             const active = location.pathname === to;
             return (

@@ -5,6 +5,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 export default function TopBar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,10 +67,30 @@ export default function TopBar() {
         </nav>
 
         <div className="flex items-center gap-2 md:hidden">
-          <button className="rounded-full border border-stone-200 p-2 text-stone-700">
+          <button 
+            onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+            className="rounded-full border border-stone-200 p-2 text-stone-700"
+          >
             <Search className="h-4 w-4" />
           </button>
         </div>
+      </div>
+      
+      {/* Mobile Search Bar */}
+      {isMobileSearchOpen && (
+        <div className="border-t border-stone-200/80 bg-white p-4 md:hidden">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search groceries..."
+              className="w-full rounded-full border border-stone-200 bg-stone-50 py-3 pl-11 pr-3 text-sm text-stone-700 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+              autoFocus
+            />
+          </form>
+        </div>
+      )}
       </div>
     </header>
   );
