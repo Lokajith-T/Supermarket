@@ -1,13 +1,25 @@
 import { useState, useEffect } from 'react';
 import CustomerLayout from '@/components/layout/CustomerLayout';
 import Card from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
 import { database } from '@/firebase';
 import { ref, onValue } from 'firebase/database';
 import { Product } from '@/types';
 
+interface StockRequest {
+  id: string;
+  productName: string;
+  quantity: number;
+  message: string;
+  status: string;
+  createdAt: string;
+}
+
 export default function CustomerDashboardPage() {
   const [firebaseProducts, setFirebaseProducts] = useState<Product[]>([]);
   const [orderCount, setOrderCount] = useState(0);
+  const [stockRequests, setStockRequests] = useState<StockRequest[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
 
   useEffect(() => {
     const productsRef = ref(database, 'products');
@@ -48,11 +60,25 @@ export default function CustomerDashboardPage() {
       }
     });
 
+    // Fetch stock requests
+    fetch('https://supermarket-u9sm.onrender.com/api/stock-requests')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          // Sort by newest first
+          data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setStockRequests(data);
+        }
+      })
+      .catch(err => console.error("Failed to fetch stock requests:", err))
+      .finally(() => setLoadingRequests(false));
+
     return () => {
       unsub();
       unsubOrders();
     };
   }, []);
+
   return (
     <CustomerLayout>
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 lg:px-8">
@@ -76,16 +102,57 @@ export default function CustomerDashboardPage() {
           </Card>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {firebaseProducts.slice(0, 8).map((product) => (
-            <Card key={product.id} className="overflow-hidden p-0">
-              <img src={product.image} alt={product.name} className="h-40 w-full object-cover" />
-              <div className="p-4">
-                <div className="font-bold text-stone-900">{product.name}</div>
-                <div className="mt-2 text-lg font-black text-emerald-700">₹{product.price}</div>
+        <div className="mt-12">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-stone-900">My Product Requests</h2>
+          </div>
+          <Card className="overflow-hidden p-0 border-stone-200 shadow-sm">
+            {loadingRequests ? (
+              <div className="p-8 text-center text-stone-500">Loading requests...</div>
+            ) : stockRequests.length === 0 ? (
+              <div className="p-8 text-center text-stone-500">You haven't made any product requests yet.</div>
+            ) : (
+              <div className="divide-y divide-stone-100">
+                {stockRequests.map(req => (
+                  <div key={req.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-stone-50 transition-colors">
+                    <div>
+                      <h3 className="font-bold text-stone-900">{req.productName}</h3>
+                      <div className="mt-1 text-sm text-stone-500 flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <span>Quantity: {req.quantity}</span>
+                        <span>•</span>
+                        <span>{new Date(req.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      {req.message && (
+                        <p className="mt-2 text-sm text-stone-600 italic">"{req.message}"</p>
+                      )}
+                    </div>
+                    <div>
+                      <Badge variant={req.status === 'Approved' ? 'success' : req.status === 'Rejected' ? 'danger' : 'warning'}>
+                        {req.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </Card>
-          ))}
+            )}
+          </Card>
+        </div>
+
+        <div className="mt-12">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-stone-900">Recommended for you</h2>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {firebaseProducts.slice(0, 8).map((product) => (
+              <Card key={product.id} className="overflow-hidden p-0">
+                <img src={product.image} alt={product.name} className="h-40 w-full object-cover" />
+                <div className="p-4">
+                  <div className="font-bold text-stone-900">{product.name}</div>
+                  <div className="mt-2 text-lg font-black text-emerald-700">₹{product.price}</div>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </CustomerLayout>

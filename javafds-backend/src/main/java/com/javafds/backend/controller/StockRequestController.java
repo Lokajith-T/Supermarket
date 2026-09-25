@@ -18,4 +18,9 @@ public class StockRequestController {
     public CompletableFuture<ProductRequest> create(@RequestBody ProductRequest request) {
         return firebaseService.saveStockRequest(request);
     }
+
+    @GetMapping
+    public CompletableFuture<java.util.List<ProductRequest>> getAll() {
+        return firebaseService.getStockRequests();
+    }
 }

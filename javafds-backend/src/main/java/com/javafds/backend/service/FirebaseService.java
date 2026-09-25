@@ -145,4 +145,29 @@ public class FirebaseService {
         });
         return future;
     }
+
+    public CompletableFuture<List<com.javafds.backend.model.ProductRequest>> getStockRequests() {
+        CompletableFuture<List<com.javafds.backend.model.ProductRequest>> future = new CompletableFuture<>();
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("stockRequests");
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                List<com.javafds.backend.model.ProductRequest> requests = new ArrayList<>();
+                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                    com.javafds.backend.model.ProductRequest r = child.getValue(com.javafds.backend.model.ProductRequest.class);
+                    if (r != null) {
+                        r.setId(child.getKey());
+                        requests.add(r);
+                    }
+                }
+                future.complete(requests);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                future.completeExceptionally(databaseError.toException());
+            }
+        });
+        return future;
+    }
 }
