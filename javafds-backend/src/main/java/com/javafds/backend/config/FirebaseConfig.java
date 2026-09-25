@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration;
 
 import jakarta.annotation.PostConstruct;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class FirebaseConfig {
@@ -14,11 +16,18 @@ public class FirebaseConfig {
     @PostConstruct
     public void init() {
         try {
-            // Load the service account key from the resources folder
-            InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream("serviceAccountKey.json");
+            InputStream serviceAccount = null;
+            String envCredentials = System.getenv("FIREBASE_CREDENTIALS");
+            
+            if (envCredentials != null && !envCredentials.isEmpty()) {
+                serviceAccount = new ByteArrayInputStream(envCredentials.getBytes(StandardCharsets.UTF_8));
+                System.out.println("Using FIREBASE_CREDENTIALS from environment variables.");
+            } else {
+                serviceAccount = getClass().getClassLoader().getResourceAsStream("serviceAccountKey.json");
+            }
             
             if (serviceAccount == null) {
-                System.err.println("Firebase Service Account Key (serviceAccountKey.json) not found in resources!");
+                System.err.println("Firebase credentials not found! Please set FIREBASE_CREDENTIALS env var or add serviceAccountKey.json");
                 return;
             }
 
