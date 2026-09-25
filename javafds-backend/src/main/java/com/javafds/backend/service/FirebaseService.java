@@ -125,4 +125,24 @@ public class FirebaseService {
         });
         return future;
     }
+
+    // Stock Requests
+    public CompletableFuture<com.javafds.backend.model.ProductRequest> saveStockRequest(com.javafds.backend.model.ProductRequest request) {
+        CompletableFuture<com.javafds.backend.model.ProductRequest> future = new CompletableFuture<>();
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("stockRequests");
+        String id = request.getId();
+        if (id == null || id.isEmpty()) {
+            id = ref.push().getKey();
+            request.setId(id);
+        }
+        
+        ref.child(id).setValue(request, (databaseError, databaseReference) -> {
+            if (databaseError != null) {
+                future.completeExceptionally(databaseError.toException());
+            } else {
+                future.complete(request);
+            }
+        });
+        return future;
+    }
 }

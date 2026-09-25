@@ -249,14 +249,25 @@ export default function HomePage() {
                     reset: () => void;
                   };
                   try {
-                    await push(ref(database, 'stockRequests'), {
-                      productName: target.productName.value,
-                      quantity: target.qty.value || 1,
-                      message: target.message.value || '',
-                      userName: 'Customer', // Or get from auth if available
-                      status: 'Pending',
-                      createdAt: new Date().toISOString()
+                    const response = await fetch('https://supermarket-u9sm.onrender.com/api/stock-requests', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        productName: target.productName.value,
+                        quantity: Number(target.qty.value) || 1,
+                        message: target.message.value || '',
+                        userName: 'Customer',
+                        status: 'Pending',
+                        createdAt: new Date().toISOString()
+                      }),
                     });
+
+                    if (!response.ok) {
+                      throw new Error('Backend response was not ok');
+                    }
+                    
                     alert('Product request submitted successfully!'); 
                     target.reset();
                   } catch(err) {
