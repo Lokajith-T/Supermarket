@@ -51,9 +51,26 @@ export default function HomePage() {
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
-          setFirebaseProducts(data);
+          const prodArray: Product[] = data.map((item: any) => {
+            const dbCat = dbCategories.find(c => c.id === item.categoryId);
+            const cat = categories.find(c => c.name === item.categoryId || c.id === item.categoryId || (dbCat && c.name === dbCat.name));
+            return {
+              id: item.id,
+              name: item.name,
+              brand: item.brand || 'Local',
+              description: item.description || item.name,
+              price: item.price,
+              unit: item.packSize ? `${item.packSize}` : item.unit || 'Piece',
+              category: dbCat ? dbCat.name : (item.categoryId || 'Unknown'),
+              stock: item.quantity || 0,
+              rating: item.rating || 4.5,
+              image: item.imageUrl || item.image || (cat ? cat.image : 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80'),
+              status: item.quantity <= 0 ? 'OUT OF STOCK' : (item.quantity <= (item.minStock || 5) ? 'LOW STOCK' : 'IN STOCK'),
+              sku: item.sku || 'N/A'
+            };
+          });
+          setFirebaseProducts(prodArray);
         } else {
-          // fallback to empty or mock
           setFirebaseProducts([]);
         }
       })
@@ -61,7 +78,7 @@ export default function HomePage() {
         console.error('Error fetching products from Java backend:', err);
         setFirebaseProducts([]);
       });
-  }, []);
+  }, [dbCategories]);
 
   const featured = firebaseProducts.slice(0, 5);
   const arrivals = firebaseProducts.slice(8, 14);
