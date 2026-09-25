@@ -30,8 +30,17 @@ export default function AdminRequests() {
         updates[`/stockRequests/${req.id}/status`] = newStatus;
         updates[`/stockRequests/${req.id}/updatedAt`] = new Date().toISOString();
         
-        // If approved, you would ideally trigger a stock addition or something, 
-        // but for now we just change status.
+        if (newStatus === 'Approved') {
+          // Send a notification to the user
+          const notifId = 'notif_' + Date.now();
+          updates[`/notifications/${notifId}`] = {
+            title: 'Product Request Approved',
+            description: `Your request for ${req.productName} (Qty: ${req.quantity}) has been approved and is being added to our catalog!`,
+            type: 'New product',
+            read: false,
+            time: new Date().toISOString()
+          };
+        }
         
         await update(ref(database), updates);
       } catch (error) {
