@@ -231,25 +231,75 @@ export default function HomePage() {
         <section className="mb-12">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-emerald-600">Top picks</p>
-              <h2 className="text-3xl font-black text-stone-900">Best sellers</h2>
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-600">Can't find it?</p>
+              <h2 className="text-3xl font-black text-stone-900">Request a Product</h2>
             </div>
           </div>
-          <div className="grid gap-5 lg:grid-cols-3">
-            {bestSellers.slice(0, 3).map((product) => (
-              <Card key={product.id} className="flex items-center gap-4">
-                <img src={product.image} alt={product.name} className="h-20 w-20 rounded-2xl object-cover" />
-                <div className="flex-1">
-                  <div className="text-sm text-stone-500">{product.brand}</div>
-                  <div className="font-bold text-stone-900">{product.name}</div>
-                  <div className="mt-1 flex items-center justify-between">
-                    <div className="text-lg font-black text-emerald-700">₹{product.price}</div>
-                    <Badge variant={product.status === 'IN STOCK' ? 'success' : 'warning'}>{product.status}</Badge>
+          <Card className="p-6 md:p-8 bg-stone-50 border-stone-200">
+            <div className="flex flex-col md:flex-row gap-8 items-center">
+              <div className="flex-1 w-full">
+                <h3 className="text-xl font-bold text-stone-900 mb-2">Tell us what you need</h3>
+                <p className="text-stone-600 mb-6">If you can't find a product in our store, let us know and we'll try to stock it for you!</p>
+                <form className="flex flex-col gap-4" onSubmit={async (e) => { 
+                  e.preventDefault(); 
+                  const target = e.target as typeof e.target & {
+                    productName: { value: string };
+                    qty: { value: number };
+                    message: { value: string };
+                    reset: () => void;
+                  };
+                  try {
+                    const { push } = await import('firebase/database');
+                    await push(ref(database, 'stockRequests'), {
+                      productName: target.productName.value,
+                      quantity: target.qty.value || 1,
+                      message: target.message.value || '',
+                      userName: 'Customer', // Or get from auth if available
+                      status: 'Pending',
+                      createdAt: new Date().toISOString()
+                    });
+                    alert('Product request submitted successfully!'); 
+                    target.reset();
+                  } catch(err) {
+                    console.error('Error submitting request:', err);
+                    alert('Failed to submit request.');
+                  }
+                }}>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input 
+                      type="text" 
+                      name="productName"
+                      placeholder="Product Name (e.g., Organic Almond Milk)" 
+                      className="flex-1 rounded-xl border border-stone-300 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      required
+                    />
+                    <input 
+                      type="number" 
+                      name="qty"
+                      min="1"
+                      placeholder="Qty" 
+                      className="w-full sm:w-24 rounded-xl border border-stone-300 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      required
+                    />
                   </div>
+                  <input 
+                    type="text" 
+                    name="message"
+                    placeholder="Additional details (optional)" 
+                    className="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <Button type="submit" className="bg-emerald-600 text-white hover:bg-emerald-700 w-full sm:w-auto">
+                    Submit Request
+                  </Button>
+                </form>
+              </div>
+              <div className="hidden md:block">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                  <ShoppingBag className="h-12 w-12" />
                 </div>
-              </Card>
-            ))}
-          </div>
+              </div>
+            </div>
+          </Card>
         </section>
 
         <section className="mb-12">
