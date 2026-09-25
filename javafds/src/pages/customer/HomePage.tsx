@@ -18,60 +18,36 @@ export default function HomePage() {
   const [dbCategories, setDbCategories] = useState<typeof categories>([]);
 
   useEffect(() => {
-    const categoriesRef = ref(database, 'categories');
-    const unsub = onValue(categoriesRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const catArray = Object.keys(data)
-          .filter(key => data[key].active !== false) // optional: only active categories
-          .map(key => {
-            const item = data[key];
-            const localMatch = categories.find(c => c.name === item.name);
-            return {
-              id: key,
-              name: item.name,
-              productCount: firebaseProducts.filter(p => p.category === key).length || (localMatch ? localMatch.productCount : 0),
-              icon: localMatch ? localMatch.icon : '📦',
-              accent: localMatch ? localMatch.accent : 'bg-stone-100 text-stone-700',
-              image: localMatch ? localMatch.image : 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=700&q=80'
-            };
-          });
-        setDbCategories(catArray);
-      } else {
-        setDbCategories([]);
-      }
-    });
-    return () => unsub();
-  }, [firebaseProducts]); // Depend on firebaseProducts to update productCount accurately
+    fetch('http://localhost:8081/api/categorys')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          setDbCategories(data);
+        } else {
+          setDbCategories(categories); // fallback to local
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching categories from Java backend:', err);
+        setDbCategories(categories); // fallback
+      });
+  }, []);
 
   useEffect(() => {
-    const productsRef = ref(database, 'products');
-    const unsub = onValue(productsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const prodArray: Product[] = Object.keys(data).map(key => {
-          const item = data[key];
-          return {
-            id: key,
-            name: item.name,
-            brand: 'Local',
-            description: item.name,
-            price: item.price,
-            unit: item.packSize ? `${item.packSize}` : item.unit || 'Piece',
-            category: item.categoryId || 'Unknown',
-            stock: item.quantity || 0,
-            rating: 4.5,
-            image: item.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80',
-            status: item.quantity <= 0 ? 'OUT OF STOCK' : (item.quantity <= (item.minStock || 5) ? 'LOW STOCK' : 'IN STOCK'),
-            sku: item.sku || 'N/A'
-          };
-        });
-        setFirebaseProducts(prodArray);
-      } else {
+    fetch('http://localhost:8081/api/products')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          setFirebaseProducts(data);
+        } else {
+          // fallback to empty or mock
+          setFirebaseProducts([]);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching products from Java backend:', err);
         setFirebaseProducts([]);
-      }
-    });
-    return () => unsub();
+      });
   }, []);
 
   const featured = firebaseProducts.slice(0, 5);

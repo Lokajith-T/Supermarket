@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/layout/Sidebar';
-import { database } from '../../firebase';
-import { ref, onValue, push, update, remove } from 'firebase/database';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiImage } from 'react-icons/fi';
+
+const API_BASE = 'http://localhost:8081/api';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -13,67 +13,63 @@ export default function AdminProducts() {
   });
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Fetch Products
-    const productsRef = ref(database, 'products');
-    onValue(productsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setProducts(Object.keys(data).map(key => ({ id: key, ...data[key] })));
-      } else {
-        setProducts([]);
-      }
-    });
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/products`);
+      if (res.ok) setProducts(await res.json());
+    } catch (error) {
+      console.error("Error fetching products", error);
+    }
+  };
 
-    // Fetch Categories
-    const categoriesRef = ref(database, 'categories');
-    onValue(categoriesRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setCategories(Object.keys(data).map(key => ({ id: key, ...data[key] })));
-      } else {
-        setCategories([]);
-      }
-    });
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/categorys`);
+      if (res.ok) setCategories(await res.json());
+    } catch (error) {
+      console.error("Error fetching categories", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
   }, []);
 
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      const payload = {
+        name: currentProduct.name,
+        sku: currentProduct.sku,
+        categoryId: currentProduct.categoryId,
+        price: Number(currentProduct.price),
+        quantity: Number(currentProduct.quantity),
+        minStock: Number(currentProduct.minStock),
+        active: currentProduct.active,
+        imageUrl: currentProduct.imageUrl || '',
+        unit: currentProduct.unit || 'PIECE',
+        packSize: currentProduct.packSize || ''
+      };
+
       if (currentProduct.id) {
         // Update
-        const updates = {};
-        updates['/products/' + currentProduct.id] = {
-          name: currentProduct.name,
-          sku: currentProduct.sku,
-          categoryId: currentProduct.categoryId,
-          price: Number(currentProduct.price),
-          quantity: Number(currentProduct.quantity),
-          minStock: Number(currentProduct.minStock),
-          active: currentProduct.active,
-          imageUrl: currentProduct.imageUrl || '',
-          unit: currentProduct.unit || 'PIECE',
-          packSize: currentProduct.packSize || ''
-        };
-        await update(ref(database), updates);
+        await fetch(`${API_BASE}/products/${currentProduct.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
       } else {
         // Create
-        await push(ref(database, 'products'), {
-          name: currentProduct.name,
-          sku: currentProduct.sku,
-          categoryId: currentProduct.categoryId,
-          price: Number(currentProduct.price),
-          quantity: Number(currentProduct.quantity),
-          minStock: Number(currentProduct.minStock),
-          active: currentProduct.active,
-          imageUrl: currentProduct.imageUrl || '',
-          unit: currentProduct.unit || 'PIECE',
-          packSize: currentProduct.packSize || '',
-          createdAt: new Date().toISOString()
+        await fetch(`${API_BASE}/products`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
       }
       setIsModalOpen(false);
+      fetchProducts(); // Refresh list
     } catch (error) {
       console.error("Error saving product: ", error);
       alert("Failed to save product.");
@@ -84,7 +80,12 @@ export default function AdminProducts() {
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
-      await remove(ref(database, 'products/' + id));
+      try {
+        await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
+        fetchProducts();
+      } catch(e) {
+        console.error(e);
+      }
     }
   };
 
@@ -110,31 +111,13 @@ export default function AdminProducts() {
   };
 
   const seedProducts = async () => {
-    if (!window.confirm("This will add 150+ products. Proceed?")) return;
+    if (!window.confirm("This will add products. Proceed?")) return;
     if (categories.length === 0) return alert("Please seed/add categories first!");
 
     setLoading(true);
     const rawProducts = {
-      "🍚 Rice & Grains": ["Rice", "Brown Rice", "Basmati Rice", "Idli Rice", "Raw Rice", "Wheat", "Rava / Sooji", "Poha", "Millets"],
-      "🌾 Dals & Pulses": ["Toor Dal", "Moong Dal", "Urad Dal", "Chana Dal", "Masoor Dal", "Green Gram", "Black Gram", "Chickpeas", "Rajma"],
-      "🌶️ Spices & Masala": ["Turmeric Powder", "Chilli Powder", "Coriander Powder", "Cumin", "Pepper", "Mustard Seeds", "Garam Masala", "Sambar Powder", "Rasam Powder", "Biryani Masala", "Curry Masala"],
-      "🛢️ Cooking Oils & Ghee": ["Sunflower Oil", "Groundnut Oil", "Coconut Oil", "Gingelly Oil", "Mustard Oil", "Rice Bran Oil", "Olive Oil", "Ghee", "Vanaspati"],
-      "🍪 Biscuits & Snacks": ["Biscuits", "Cookies", "Chips", "Namkeen", "Mixture", "Popcorn", "Nuts", "Peanuts", "Crackers"],
-      "🥤 Beverages": ["Tea", "Coffee", "Health Drinks", "Soft Drinks", "Fruit Juices", "Energy Drinks", "Packaged Water", "Milkshakes", "Instant Drink Mixes"],
-      "🥛 Dairy & Milk Products": ["Milk", "Curd", "Buttermilk", "Paneer", "Butter", "Cheese", "Cream", "Flavoured Milk", "Milk-based Drinks"],
-      "🍞 Bakery & Breakfast": ["Bread", "Buns", "Cakes", "Rusk", "Jam", "Honey", "Peanut Butter", "Corn Flakes", "Muesli", "Oats"],
-      "🍫 Chocolates & Sweets": ["Chocolates", "Candies", "Toffees", "Lollipops", "Indian Sweets", "Ice Cream", "Desserts"],
-      "🥫 Packaged & Ready-to-Eat Foods": ["Instant Noodles", "Pasta", "Vermicelli", "Ready-to-Eat Meals", "Canned Food", "Pickles", "Papad", "Sauces", "Ketchup", "Mayonnaise"],
-      "🧂 Salt, Sugar & Essentials": ["Sugar", "Salt", "Jaggery", "Rock Salt", "Baking Soda", "Baking Powder", "Vinegar"],
-      "🥬 Fresh Vegetables": ["Onion", "Tomato", "Potato", "Carrot", "Beans", "Brinjal", "Cabbage", "Cauliflower", "Green Chilli", "Ginger", "Garlic", "Leafy Vegetables"],
-      "🍎 Fruits": ["Apple", "Banana", "Orange", "Mango", "Grapes", "Watermelon", "Papaya", "Pomegranate", "Guava", "Pineapple"],
-      "🧴 Personal Care": ["Bath Soap", "Shampoo", "Conditioner", "Toothpaste", "Toothbrush", "Face Wash", "Hair Oil", "Deodorant", "Shaving Products", "Hand Wash"],
-      "🧹 Home Cleaning": ["Dishwash Liquid", "Laundry Detergent", "Floor Cleaner", "Toilet Cleaner", "Glass Cleaner", "Bleach", "Cleaning Brushes", "Sponges", "Garbage Bags"],
-      "🧻 Household Essentials": ["Tissue Paper", "Toilet Paper", "Aluminium Foil", "Cling Film", "Paper Plates", "Paper Cups", "Disposable Items", "Matchboxes", "Candles"],
-      "👶 Baby Care": ["Baby Diapers", "Baby Food", "Baby Soap", "Baby Shampoo", "Baby Lotion", "Baby Wipes", "Baby Powder"],
-      "🐕 Pet Care": ["Dog Food", "Cat Food", "Pet Treats", "Pet Shampoo", "Pet Accessories"],
-      "🥜 Dry Fruits & Nuts": ["Almonds", "Cashews", "Raisins", "Pistachios", "Walnuts", "Dates", "Dry Figs", "Mixed Dry Fruits"],
-      "🧊 Frozen Foods": ["Frozen Vegetables", "Frozen Fruits", "Frozen Snacks", "Frozen Paratha", "Frozen Chicken", "Frozen Seafood", "Ice Cream"]
+      "🍚 Rice & Grains": ["Rice", "Brown Rice"],
+      "🌾 Dals & Pulses": ["Toor Dal", "Moong Dal"]
     };
 
     let count = 0;
@@ -143,22 +126,26 @@ export default function AdminProducts() {
         const cat = categories.find(c => c.name === catName);
         if (cat) {
           for (const prodName of prodList) {
-            await push(ref(database, 'products'), {
-              name: prodName,
-              sku: 'GROC-' + Math.floor(1000 + Math.random() * 9000),
-              categoryId: cat.id,
-              price: Math.floor(Math.random() * (300 - 20 + 1)) + 20, // Random price between 20 and 300
-              quantity: 10,
-              minStock: 5,
-              active: true,
-              imageUrl: '',
-              createdAt: new Date().toISOString()
+            await fetch(`${API_BASE}/products`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: prodName,
+                sku: 'GROC-' + Math.floor(1000 + Math.random() * 9000),
+                categoryId: cat.id,
+                price: Math.floor(Math.random() * (300 - 20 + 1)) + 20,
+                quantity: 10,
+                minStock: 5,
+                active: true,
+                imageUrl: ''
+              })
             });
             count++;
           }
         }
       }
       alert(`Successfully added ${count} products!`);
+      fetchProducts();
     } catch (error) {
       console.error(error);
       alert('Error seeding products.');
@@ -270,7 +257,7 @@ export default function AdminProducts() {
                   <label className="label">Category</label>
                   <select className="input-field" value={currentProduct.categoryId} onChange={e => setCurrentProduct({...currentProduct, categoryId: e.target.value})} required>
                     <option value="">Select a category</option>
-                    {categories.filter(c => c.active).map(cat => (
+                    {categories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
