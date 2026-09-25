@@ -152,15 +152,23 @@ public class FirebaseService {
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                List<com.javafds.backend.model.ProductRequest> requests = new ArrayList<>();
-                for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    com.javafds.backend.model.ProductRequest r = child.getValue(com.javafds.backend.model.ProductRequest.class);
-                    if (r != null) {
-                        r.setId(child.getKey());
-                        requests.add(r);
+                try {
+                    List<com.javafds.backend.model.ProductRequest> requests = new ArrayList<>();
+                    for (DataSnapshot child : dataSnapshot.getChildren()) {
+                        try {
+                            com.javafds.backend.model.ProductRequest r = child.getValue(com.javafds.backend.model.ProductRequest.class);
+                            if (r != null) {
+                                r.setId(child.getKey());
+                                requests.add(r);
+                            }
+                        } catch (Exception parseEx) {
+                            System.err.println("Skipping invalid stock request: " + child.getKey());
+                        }
                     }
+                    future.complete(requests);
+                } catch (Exception e) {
+                    future.completeExceptionally(e);
                 }
-                future.complete(requests);
             }
 
             @Override
