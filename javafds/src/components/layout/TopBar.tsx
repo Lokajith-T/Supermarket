@@ -57,10 +57,15 @@ export default function TopBar() {
           </Link>
           <Link to="/products" className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100">Check Stock Availability</Link>
           {isAuthenticated ? (
-            <button onClick={handleLogout} className="flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50">
-              <LogOut className="h-4 w-4" />
-              Logout
-            </button>
+            <>
+              <Link to="/dashboard" className="flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100">
+                Dashboard
+              </Link>
+              <button onClick={handleLogout} className="flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50">
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </>
           ) : (
             <Link to="/login" className="rounded-full border border-emerald-200 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50">Login</Link>
           )}
