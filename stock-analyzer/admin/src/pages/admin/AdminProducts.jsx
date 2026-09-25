@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/layout/Sidebar';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiImage } from 'react-icons/fi';
 
-const API_BASE = 'http://localhost:8081/api';
+const API_BASE = 'https://supermarket-u9sm.onrender.com/api';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
