@@ -143,7 +143,12 @@ export default function HomePage() {
             <Link to="/categories" className="flex items-center gap-1 text-sm font-semibold text-emerald-700">View all <ChevronRight className="h-4 w-4" /></Link>
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-            {(dbCategories.length > 0 ? dbCategories : categories).map((category) => (
+            {(dbCategories.length > 0 ? dbCategories : categories).map((category) => {
+              const productCount = firebaseProducts.length > 0 
+                ? firebaseProducts.filter(p => p.category === category.name).length 
+                : category.productCount;
+                
+              return (
               <a href={`/products?category=${encodeURIComponent(category.name)}`} key={category.id} className="block">
                 <motion.div whileHover={{ y: -4 }} className="group overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-soft">
                   <div className="relative h-40 overflow-hidden">
@@ -153,11 +158,11 @@ export default function HomePage() {
                   </div>
                   <div className="p-4">
                     <h3 className="text-lg font-bold text-stone-900">{category.name}</h3>
-                    <p className="mt-1 text-sm text-stone-500">{category.productCount} products</p>
+                    <p className="mt-1 text-sm text-stone-500">{productCount} products</p>
                   </div>
                 </motion.div>
               </a>
-            ))}
+            )})}
           </div>
         </section>
 
