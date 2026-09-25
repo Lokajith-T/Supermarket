@@ -25,7 +25,7 @@ export default function ProductListPage() {
   const [dbCategories, setDbCategories] = useState<typeof categories>([]);
 
   useEffect(() => {
-    fetch('http://localhost:8081/api/categorys')
+    fetch('https://supermarket-u9sm.onrender.com/api/categorys')
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
@@ -54,7 +54,7 @@ export default function ProductListPage() {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:8081/api/products')
+    fetch('https://supermarket-u9sm.onrender.com/api/products')
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
