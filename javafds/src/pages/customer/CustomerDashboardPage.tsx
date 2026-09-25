@@ -60,32 +60,22 @@ export default function CustomerDashboardPage() {
       }
     });
 
-    // Fetch stock requests directly from Firebase
-    const reqRef = ref(database, 'stockRequests');
-    const unsubReq = onValue(reqRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const reqArray: StockRequest[] = Object.keys(data).map(key => ({
-          id: key,
-          productName: data[key].productName,
-          quantity: data[key].quantity,
-          message: data[key].message || '',
-          status: data[key].status,
-          createdAt: data[key].createdAt,
-        }));
-        // Sort by newest first
-        reqArray.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setStockRequests(reqArray);
-      } else {
-        setStockRequests([]);
-      }
-      setLoadingRequests(false);
-    });
+    // Fetch stock requests
+    fetch('https://supermarket-u9sm.onrender.com/api/stock-requests')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          // Sort by newest first
+          data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setStockRequests(data);
+        }
+      })
+      .catch(err => console.error("Failed to fetch stock requests:", err))
+      .finally(() => setLoadingRequests(false));
 
     return () => {
       unsub();
       unsubOrders();
-      unsubReq();
     };
   }, []);
 

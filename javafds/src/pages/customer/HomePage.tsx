@@ -248,22 +248,43 @@ export default function HomePage() {
                     message: { value: string };
                     reset: () => void;
                   };
+                  
+                  // Simple loading state
+                  const submitBtn = e.currentTarget.querySelector('button[type="submit"]') as HTMLButtonElement;
+                  const originalText = submitBtn.innerText;
+                  submitBtn.innerText = 'Waking up server... (can take 60s)';
+                  submitBtn.disabled = true;
+                  submitBtn.classList.add('opacity-75');
+
                   try {
-                    const reqRef = ref(database, 'stockRequests');
-                    await push(reqRef, {
-                      productName: target.productName.value,
-                      quantity: Number(target.qty.value) || 1,
-                      message: target.message.value || '',
-                      userName: 'Customer',
-                      status: 'Pending',
-                      createdAt: new Date().toISOString()
+                    const response = await fetch('https://supermarket-u9sm.onrender.com/api/stock-requests', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        productName: target.productName.value,
+                        quantity: Number(target.qty.value) || 1,
+                        message: target.message.value || '',
+                        userName: 'Customer',
+                        status: 'Pending',
+                        createdAt: new Date().toISOString()
+                      }),
                     });
+
+                    if (!response.ok) {
+                      throw new Error('Backend response was not ok');
+                    }
                     
                     alert('Product request submitted successfully!'); 
                     target.reset();
                   } catch(err) {
                     console.error('Error submitting request:', err);
-                    alert('Failed to submit request.');
+                    alert('Failed to submit request. The server might still be waking up. Please try again.');
+                  } finally {
+                    submitBtn.innerText = originalText;
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-75');
                   }
                 }}>
                   <div className="flex flex-col sm:flex-row gap-3">
