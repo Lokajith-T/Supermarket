@@ -22,7 +22,20 @@ export default function HomePage() {
       .then(res => res.json())
       .then(data => {
         if (data && data.length > 0) {
-          setDbCategories(data);
+          const catArray = data
+            .filter((c: any) => c.active !== false)
+            .map((item: any) => {
+              const localMatch = categories.find(c => c.name === item.name);
+              return {
+                id: item.id,
+                name: item.name,
+                productCount: 0,
+                icon: localMatch ? localMatch.icon : '📦',
+                accent: localMatch ? localMatch.accent : 'bg-stone-100 text-stone-700',
+                image: localMatch ? localMatch.image : 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=700&q=80'
+              };
+            });
+          setDbCategories(catArray);
         } else {
           setDbCategories(categories); // fallback to local
         }
